@@ -39,20 +39,15 @@ Shodan IP Grabber is a command-line tool that leverages the Shodan API to search
      python sipg.py -q "Ssl.cert.subject.CN:\"*.uber.com\""
     
 
-2. Change Shodan API key:
+2. Save results:
 
     ```bash
-    python sipg.py --change-key
-    
-3. Remove Shodan API key:
+    python sipg.py -q "your-search-query" -o output.txt
 
-   ```bash
-    python sipg.py --remove-key
-
-4. Help:
+3. Help:
 
     ```bash
-    python sipg.py --help
+    python sipg.py -h
 
 ## Author
 
