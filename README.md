@@ -23,14 +23,14 @@ Shodan IP Grabber is a command-line tool that leverages the Shodan API to search
    ```bash
    pip install -r requirements.txt
 
-## Commands
+### Commands
 
 1. Search for IP addresses and display them in the command line:
 
     ```bash
      python sipg.py -q "your-search-query"
 
-## Common Search Query Examples:
+### Common Search Query Examples:
      python sipg.py -q "ssl:\"Uber Technologies Inc\""
      python sipg.py -q "ssl:\"Uber Technologies Inc\" http.status:200"
      python sipg.py -q "Ssl.cert.subject.CN:\"*.uber.com\""
