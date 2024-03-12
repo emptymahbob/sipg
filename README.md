@@ -29,15 +29,12 @@ Shodan IP Grabber is a command-line tool that leverages the Shodan API to search
 
     ```bash
      python sipg.py -q "your-search-query"
-    
-     Common Search Query Examples:
 
+## Common Search Query Examples:
      python sipg.py -q "ssl:\"Uber Technologies Inc\""
-  
      python sipg.py -q "ssl:\"Uber Technologies Inc\" http.status:200"
-  
      python sipg.py -q "Ssl.cert.subject.CN:\"*.uber.com\""
-    
+     python sipg.py -q "ssl:\"Uber Technologies Inc\" -http.title:\"INVALID URL\""
 
 2. Save results:
 
