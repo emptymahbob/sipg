@@ -1,6 +1,6 @@
 ## Shodan IP Grabber (S. IP G.)
 
-![https://github.com/emptymahbob/shodan-ip-grabber/blob/main/banner.png](banner.png)
+![https://github.com/emptymahbob/shodan-ip-grabber/blob/main/banner.jpg](banner.jpg)
 
 ## Description
 
