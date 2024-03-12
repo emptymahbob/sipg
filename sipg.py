@@ -1,116 +1,169 @@
-import os
-import click
+import colorama
 import requests
 import ipaddress
+import sys
 import json
 
+colorama.init()
+
+# Constants
 CONFIG_FILE = 'config.json'
 
-# Load API key from config file or set it to None if not present
-api_key = None
-if os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, 'r') as config_file:
-        config_data = json.load(config_file)
-        api_key = config_data.get('api_key')
+# Function to load Shodan API key from the configuration file
+def load_api_key():
+    try:
+        with open(CONFIG_FILE, 'r') as config_file:
+            config_data = json.load(config_file)
+            return config_data.get('api_key', None)
+    except FileNotFoundError:
+        return None
 
-BANNER = '''
-  ______           _______  _______         ______
- /      \         /      / /       \       /      \\
-/$$$$$$$ |        $$$$$$/ $$$$$$$  |      /$$$$$$  |
-$$ \\__$$/           $$ |  $$ |__$$ |      $$ | _$$/
-$$      \\           $$ |  $$    $$/       $$ |/    |
- $$$$$$  |          $$ |  $$$$$$$/        $$ |$$$$ |
-/  \\__$$ |__       _$$ |_ $$ |            $$ \\__$$ |__
-$$    $$//  |     / $$   |$$ |            $$    $$//  |
- $$$$$$/ $$/      $$$$$$/ $$/              $$$$$$/ $$/
-'''
-
-print(BANNER)
-print("\t\tMade by @emptymahbob\n")
-
-
+# Function to save Shodan API key to the configuration file
 def save_api_key(api_key):
     config_data = {'api_key': api_key}
     with open(CONFIG_FILE, 'w') as config_file:
         json.dump(config_data, config_file)
 
+# Function to introduce delay based on the number of IPs printed
+def introduce_delay(ip_count, delay_interval=5, results_per_delay=1000):
+    if ip_count % results_per_delay == 0 and ip_count > 0:
+        delay_seconds = delay_interval * (ip_count // results_per_delay)
+        time.sleep(delay_seconds)
 
-def remove_api_key():
-    if os.path.exists(CONFIG_FILE):
-        os.remove(CONFIG_FILE)
-        print("API key removed successfully.")
+# Function to display help information
+def display_help():
+    help_message = """
+Usage: python sipg.py -q "your-search-query" [OPTIONS]
+
+Options:
+  -q, --query         Specify the search query for Shodan.
+  -h, --help          Display this help message.
+  -o, --output        Save the list of IPs to a text file.
+
+Common Search Query Examples:
+  python sipg.py -q "ssl:\\"Uber Technologies Inc\\""
+  python sipg.py -q "ssl:\\"Uber Technologies Inc\\" http.status:200"
+  python sipg.py -q "ssl:\\"Uber Technologies Inc\\" -http.status:\\"Invalid URL\\""
+  python sipg.py -q "Ssl.cert.subject.CN:\\"*.uber.com\\""
+"""
+    print(help_message)
+    sys.exit(0)
+
+# Banner
+banner = (
+    colorama.Fore.RED + "  ______           " +
+    colorama.Fore.YELLOW + "_______ " +
+    colorama.Fore.RED + " _______         " +
+    colorama.Fore.YELLOW + "______     \n" +
+    colorama.Fore.RED + " /      \         " +
+    colorama.Fore.YELLOW + "/      /" +
+    colorama.Fore.RED + " /       \       " +
+    colorama.Fore.YELLOW + "/      \    \n" +
+    colorama.Fore.RED + "/$$$$$$$ |        " +
+    colorama.Fore.YELLOW + "$$$$$$/" +
+    colorama.Fore.RED + " $$$$$$$  |      " +
+    colorama.Fore.YELLOW + "/$$$$$$  |   \n" +
+    colorama.Fore.RED + "$$ \__$$/        " +
+    colorama.Fore.YELLOW + "   $$ | " +
+    colorama.Fore.RED + "$$ |__$$ |      " +
+    colorama.Fore.YELLOW + "$$ | _$$/    \n" +
+    colorama.Fore.RED + "$$      \        " +
+    colorama.Fore.YELLOW + "   $$ | " +
+    colorama.Fore.RED + " $$    $$/       " +
+    colorama.Fore.YELLOW + "$$ |/    |   \n" +
+    colorama.Fore.RED + " $$$$$$  |        " +
+    colorama.Fore.YELLOW + "  $$ | " +
+    colorama.Fore.RED + " $$$$$$$/        " +
+    colorama.Fore.YELLOW + "$$ |$$$$ |   \n" +
+    colorama.Fore.RED + "/  \__$$ |__     " +
+    colorama.Fore.YELLOW + "  _$$ |_ " +
+    colorama.Fore.RED + "$$ |            " +
+    colorama.Fore.YELLOW + "$$ \\__$$ |__ \n" +
+    colorama.Fore.RED + "$$    $$//  |  " +
+    colorama.Fore.YELLOW + "   / $$   " +
+    colorama.Fore.RED + "|$$ |            " +
+    colorama.Fore.YELLOW + "$$    $$//  |\n" +
+    colorama.Fore.RED + " $$$$$$/ $$/    " +
+    colorama.Fore.YELLOW + "  $$$$$$/ " +
+    colorama.Fore.RED + "$$/              " +
+    colorama.Fore.YELLOW + "$$$$$$/ $$/" +
+    colorama.Style.RESET_ALL + "\n"
+)
+
+print(banner)
+print("\t\tMade by @emptymahbob\n")
+
+# Command-line arguments parsing
+if len(sys.argv) < 3 or sys.argv[1] != '-q':
+    if '--help' in sys.argv or '-h' in sys.argv:
+        display_help()
     else:
-        print("No API key found.")
+        print("Usage: python sipg.py -q \"your-search-query\" [OPTIONS]")
+        sys.exit(1)
 
+api_key = load_api_key()
 
-def search_and_save_results(api_key, search_query, output_file=None):
-    # If an output file is provided, open it in write mode
-    if output_file:
-        with open(output_file, 'w') as file:
-            write_to_file = True
-    else:
-        # If no output file is provided, print the results to the command line
-        write_to_file = False
+# Check if API key is available
+if api_key is None:
+    print("Error: Shodan API key not found in the configuration file (config.json).")
+    sys.exit(1)
 
-    # Send a request to the Shodan API to get the first page of search results
-    response = requests.get(f'https://api.shodan.io/shodan/host/search?key={api_key}&query={search_query}')
+# Initialize total_results to zero
+total_results = 0
 
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the JSON response and get the total number of results
+# Send a request to the Shodan API to get the first page of search results
+search_query = sys.argv[2]
+response = requests.get(f'https://api.shodan.io/shodan/host/search?key={api_key}&query={search_query}&page=1')
+
+# Check if the request was successful
+if response.status_code == 200:
+    try:
+        # Try to parse the JSON response and get the total number of results
         results = response.json()
         total_results = results['total']
 
         # Print out the total number of results found in Shodan search
-        print(f'Total results: {total_results}')
+        print(f'Total results found: {total_results}')
 
         # Loop through all pages of search results and print out the IPv4 addresses
+        ip_count = 0
         for page in range(1, (total_results // 100) + 2):
-            response = requests.get(f'https://api.shodan.io/shodan/host/search?key={api_key}&query={search_query}&page={page}')
-            if response.status_code == 200:
-                results = response.json()
-                for result in results['matches']:
-                    ip = result['ip_str']
-                    if ipaddress.ip_address(ip).version == 4:
-                        print(ip)
-                        # Write the IP address to the output file if provided
-                        if write_to_file:
-                            file.write(ip + '\n')
-            else:
-                print(f'Request failed with status code {response.status_code}')
-    else:
-        print(f'Request failed with status code {response.status_code}')
+            try:
+                response = requests.get(f'https://api.shodan.io/shodan/host/search?key={api_key}&query={search_query}&page={page}')
 
+                if response.status_code == 200:
+                    results = response.json()
+                    for result in results['matches']:
+                        ip = result['ip_str']
+                        if ipaddress.ip_address(ip).version == 4:
+                            ip_count += 1
+                            print(f"{ip_count}. https://{ip}")
+                            introduce_delay(ip_count)
+                else:
+                    print(f'Request failed with status code {response.status_code}')
+            except Exception as e:
+                print(f'An error occurred: {e}')
+    except json.decoder.JSONDecodeError:
+        print("Error: Shodan API key not found in the configuration file (config.json).")
+else:
+    print(f'Request failed with status code {response.status_code}')
 
-@click.command()
-@click.option('-q','--query', required=True, help='Search query')
-@click.option('--change-key', is_flag=True, help='Change the API key')
-@click.option('--remove-key', is_flag=True, help='Remove the API key')
-def main(query, change_key, remove_key):
-    global api_key
+# Save the list of IPs to a text file if --output/-o flag is provided
+if '--output' in sys.argv or '-o' in sys.argv:
+    output_flag_index = sys.argv.index('--output') if '--output' in sys.argv else sys.argv.index('-o')
+    
+    if len(sys.argv) > output_flag_index + 1:
+        output_file = sys.argv[output_flag_index + 1]
+        with open(output_file, 'w') as file:
+            for page in range(1, (total_results // 100) + 2):
+                response = requests.get(f'https://api.shodan.io/shodan/host/search?key={api_key}&query={search_query}&page={page}')
+                try:
+                    results = response.json()
+                    for result in results['matches']:
+                        ip = result['ip_str']
+                        if ipaddress.ip_address(ip).version == 4:
+                            file.write('https://' + ip + '\n')
+                except json.decoder.JSONDecodeError:
+                    print("Error: Shodan API key not found in the configuration file (config.json).")
 
-    # If API key is not provided or is not saved in the config file, ask for it
-    if not api_key:
-        api_key = click.prompt('Enter your Shodan API key')
-
-        # Save the API key to the config file
-        save_api_key(api_key)
-
-    # If the change-key option is provided, ask for a new API key and update it in the config file
-    if change_key:
-        new_api_key = click.prompt('Enter the new Shodan API key')
-        save_api_key(new_api_key)
-        print('API key updated successfully.')
-        return
-
-    # If the remove-key option is provided, remove the API key from the config file
-    if remove_key:
-        remove_api_key()
-        return
-
-    # Search and save results
-    search_and_save_results(api_key, query)
-
-
-if __name__ == "__main__":
-    main()
+colorama.deinit()
