@@ -48,4 +48,4 @@ Shodan IP Grabber is a command-line tool that leverages the Shodan API to search
 
 ## Author
 
-Twitter/X: @emptymahbob 
+Twitter/X: https://x.com/emptymahbob
