@@ -11,12 +11,12 @@ Shodan IP Grabber is a command-line tool that leverages the Shodan API to search
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/emptymahbob/shodan-ip-grabber.git
+   git clone https://github.com/emptymahbob/sipg.git
 
 2. Navigate to the project directory:
 
    ```bash
-   cd shodan-ip-grabber
+   cd sipg
 
 3. Install dependencies:
 
