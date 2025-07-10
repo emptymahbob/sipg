@@ -17,7 +17,7 @@ A professional command-line tool for searching IP addresses using the Shodan API
 - 📊 **Rich Output**: Beautiful tables and detailed information display
 - 💾 **Flexible Export**: Save results to files in various formats
 - ⚡ **Rate Limiting**: Built-in API rate limiting to respect Shodan's limits
-- 🔐 **Secure Configuration**: Secure API key storage in user's home directory
+- 🔐 **Secure Configuration**: Secure API key storage in the user's home directory
 - 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
 - 📈 **Progress Tracking**: Real-time progress indicators for long searches
 - 🎯 **Multiple Output Formats**: Simple IP lists, detailed results, or formatted tables
@@ -86,7 +86,7 @@ Search for IP addresses using Shodan.
 - `--details`: Show detailed results with additional information (organization, location, hostnames, etc).
 - `--table`: Display results in a formatted table (implies --details).
 - `--start-page N`: Start fetching results from this page (1-based, default: 1).
-- `--end-page N`: End fetching results at this page (inclusive). If not set, fetches up to the last available page or max-results.
+- `--end-page N`: End fetching results at this page (inclusive). If not set, fetches up to the last available page or the maximum number of results.
 
 **How output is saved:**
 - By default, results are printed to the console.
