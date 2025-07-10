@@ -1,0 +1,40 @@
+.PHONY: help install install-dev test lint format clean build publish
+
+help: ## Show this help message
+	@echo "SIPG - Shodan IP Grabber"
+	@echo "Available commands:"
+	@powershell -Command "Get-Content $(MAKEFILE_LIST) | Select-String '^[a-zA-Z_-]+:.*?##' | ForEach-Object { $$_ -replace '^([a-zA-Z_-]+):.*?## (.*)', '$$1: $$2' } | Sort-Object"
+
+install: ## Install SIPG in development mode
+	pip install -e .
+
+install-dev: ## Install SIPG with development dependencies
+	pip install -e ".[dev]"
+
+test: ## Run tests
+	pytest tests/ -v
+
+lint: ## Run linting checks
+	flake8 sipg/ tests/
+	mypy sipg/
+
+format: ## Format code with black
+	black sipg/ tests/
+
+clean: ## Clean build artifacts
+	if exist build rmdir /s /q build
+	if exist dist rmdir /s /q dist
+	if exist *.egg-info rmdir /s /q *.egg-info
+	for /d /r . %%d in (__pycache__) do @if exist "%%d" rmdir /s /q "%%d"
+	del /s /q *.pyc 2>nul
+
+build: clean ## Build package
+	python setup.py sdist bdist_wheel
+
+publish: build ## Build and publish to PyPI
+	twine upload dist/*
+
+check: format lint test ## Run all checks (format, lint, test)
+
+dev-setup: install-dev ## Set up development environment
+	pre-commit install 
