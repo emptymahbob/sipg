@@ -43,6 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IP address extraction and display
 - Basic file output functionality
 
+## [2.1.1] - 2024-12-19
+
+### Changed
+- Updated package with latest improvements and bug fixes
+- Enhanced user experience and documentation
+
 ## [2.1.0] - 2024-12-19
 
 ### Added

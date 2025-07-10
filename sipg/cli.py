@@ -30,11 +30,11 @@ BANNER = r"""
 
 def print_banner():
     """Print the SIPG banner."""
-    console.print(Panel(BANNER, title="SIPG v2.1.0", subtitle="Made by @emptymahbob"))
+    console.print(Panel(BANNER, title="SIPG v2.1.1", subtitle="Made by @emptymahbob"))
 
 
 @click.group()
-@click.version_option(version="2.1.0", prog_name="SIPG")
+@click.version_option(version="2.1.1", prog_name="SIPG")
 def cli():
     """SIPG - Shodan IP Grabber
 
