@@ -40,10 +40,33 @@ def cli():
 
     A professional command-line tool for searching IP addresses using Shodan API.
 
-    Example:
+    \b
+    Main Commands:
+      search     Search for IP addresses using Shodan
+      configure  Configure your Shodan API key
+      info       Show API key information and usage
+      examples   Show example search queries
+      clear      Clear the stored API key
+
+    \b
+    Search Examples:
       sipg search 'ssl:"Uber Technologies Inc"'
-      sipg search http.server:Apache
-      sipg search 'ssl.cert.subject.CN:"*.uber.com"'
+      sipg search http.server:Apache --details
+      sipg search 'country:"United States"' -o results.txt
+      sipg search 'port:80' --start-page 2 --end-page 5
+
+    \b
+    Search Options:
+      -o, --output FILE     Save results to file
+      -m, --max-results N   Limit number of results
+      -d, --delay SECONDS   Delay between requests (default: 1.0s)
+      --details             Show detailed information
+      --table               Display in formatted table
+      --start-page N        Start from page N (default: 1)
+      --end-page N          End at page N (inclusive)
+
+    \b
+    For detailed help on any command, use: sipg <command> --help
     """
     pass
 
@@ -90,18 +113,43 @@ def search(query: str, output: Optional[str], max_results: Optional[int],
     QUERY: The search query to use (e.g., ssl:"Uber Technologies Inc")
 
     \b
-    Output:
-      - By default, prints results to the console.
-      - Use -o/--output to save results to a file (IPs only, or detailed JSON with --details).
-      - Use --max-results to limit the number of results.
-      - Use --start-page/--end-page to fetch results from a specific page range (each page = 100 results).
-      - Use --delay to avoid hitting Shodan rate limits (default: 1.0s).
-      - Use --details for full info, or --table for a formatted table.
+    OUTPUT OPTIONS:
+      - By default, prints results to the console
+      - Use -o/--output to save results to a file
+      - Use --max-results to limit the number of results
+      - Use --start-page/--end-page to fetch specific page ranges (each page = 100 results)
+      - Use --delay to avoid hitting Shodan rate limits (default: 1.0s)
+      - Use --details for full information, or --table for a formatted table
 
-    Examples:
-      sipg search 'ssl:"Uber Technologies Inc"' --max-results 200
-      sipg search 'http.server:Apache' --details --start-page 2 --end-page 5
-      sipg search 'country:"United States"' -o us.txt --start-page 5 --end-page 10
+    \b
+    FILE OUTPUT:
+      - Simple mode: Saves only IP addresses (one per line)
+      - Details mode: Saves full JSON data with all metadata
+      - Table mode: Same as details mode but displays in console as table
+
+    \b
+    PAGE RANGES:
+      - Each page contains up to 100 results from Shodan
+      - Use --start-page to begin from a specific page (default: 1)
+      - Use --end-page to stop at a specific page (inclusive)
+      - Example: --start-page 5 --end-page 10 gets results 401-1000
+
+    \b
+    EXAMPLES:
+      # Basic search
+      sipg search 'ssl:"Uber Technologies Inc"'
+      
+      # Limit results and save to file
+      sipg search 'http.server:Apache' --max-results 200 -o apache.txt
+      
+      # Get detailed results from specific pages
+      sipg search 'country:"United States"' --details --start-page 2 --end-page 5
+      
+      # Save detailed results to file
+      sipg search 'port:80' --details -o port80.json --start-page 5 --end-page 10
+      
+      # Display in table format
+      sipg search 'product:"nginx"' --table --max-results 50
     """
     try:
         grabber = ShodanIPGrabber()
