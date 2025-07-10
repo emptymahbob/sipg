@@ -33,7 +33,7 @@ class ShodanIPGrabber:
         self.console = Console()
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'SIPG/2.0.0 (https://github.com/emptymahbob/sipg)'
+            'User-Agent': 'SIPG/2.1.0 (https://github.com/emptymahbob/sipg)'
         })
     
     def _make_request(self, url: str, params: Dict[str, Any]) -> Dict[str, Any]:

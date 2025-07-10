@@ -19,7 +19,7 @@ BANNER = r"""
 [red]  ______           [/red][yellow]_______ [/yellow][red] _______         [/red][yellow]______     [/yellow]
 [red] /      \         [/red][yellow]/      /[/yellow][red] /       \       [/red][yellow]/      \    [/yellow]
 [red]/$$$$$$$ |        [/red][yellow]$$$$$$/[/yellow][red] $$$$$$$  |      [/red][yellow]/$$$$$$  |   [/yellow]
-[red]$$ \__$$/        [/red][yellow]   $$ | [/yellow][red]$$ |__$$ |      [/red][yellow]$$ | _$$/    [/yellow]
+[red]$$ \__$$/        [/red][yellow]   $$ | [/yellow][red] $$ |__$$ |      [/red][yellow]$$ | _$$/    [/yellow]
 [red]$$      \        [/red][yellow]   $$ | [/yellow][red] $$    $$/       [/red][yellow]$$ |/    |   [/yellow]
 [red] $$$$$$  |        [/red][yellow]  $$ | [/yellow][red] $$$$$$$/        [/red][yellow]$$ |$$$$ |   [/yellow]
 [red]/  \__$$ |__     [/red][yellow]  _$$ |_ [/yellow][red]$$ |            [/red][yellow]$$ \__$$ |__ [/yellow]
