@@ -41,4 +41,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic Shodan API integration
 - Simple command-line interface
 - IP address extraction and display
-- Basic file output functionality 
+- Basic file output functionality
+
+## [2.0.2] - 2024-12-19
+
+### Fixed
+- Fixed CLI argument parsing to properly handle quoted search queries
+- Updated examples to show correct shell quoting for complex queries
+- Fixed issue where queries with spaces and special characters were not parsed correctly
+
+## [2.0.1] - 2024-07-10
+
+### Improved
+- CLI now handles queries with spaces and special characters correctly (no more argument errors)
+- Examples and help output are now copy-paste friendly and clear
+- Added usage examples to main help output
+- Removed deprecated license classifier for modern PyPI compatibility
+
+### Fixed
+- No more errors when using queries with spaces or quotes
+- No more confusion in help or examples 

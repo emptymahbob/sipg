@@ -30,15 +30,20 @@ BANNER = r"""
 
 def print_banner():
     """Print the SIPG banner."""
-    console.print(Panel(BANNER, title="SIPG v2.0.0", subtitle="Made by @emptymahbob"))
+    console.print(Panel(BANNER, title="SIPG v2.0.2", subtitle="Made by @emptymahbob"))
 
 
 @click.group()
-@click.version_option(version="2.0.0", prog_name="SIPG")
+@click.version_option(version="2.0.2", prog_name="SIPG")
 def cli():
     """SIPG - Shodan IP Grabber
-    
+
     A professional command-line tool for searching IP addresses using Shodan API.
+
+    Example:
+      sipg search 'ssl:"Uber Technologies Inc"'
+      sipg search http.server:Apache
+      sipg search 'ssl.cert.subject.CN:"*.uber.com"'
     """
     pass
 
@@ -70,7 +75,7 @@ def configure(api_key: str):
 
 
 @cli.command()
-@click.argument('query')
+@click.argument('query', type=str)
 @click.option('-o', '--output', type=click.Path(), help='Save results to file')
 @click.option('-m', '--max-results', type=int, help='Maximum number of results to return')
 @click.option('-d', '--delay', type=float, default=1.0, help='Delay between API requests (seconds)')
@@ -80,7 +85,7 @@ def search(query: str, output: Optional[str], max_results: Optional[int],
            delay: float, details: bool, table: bool):
     """Search for IP addresses using Shodan.
     
-    QUERY: The search query to use (e.g., 'ssl:"Uber Technologies Inc"')
+    QUERY: The search query to use (e.g., ssl:"Uber Technologies Inc")
     """
     try:
         grabber = ShodanIPGrabber()
@@ -165,35 +170,35 @@ def examples():
     examples_data = [
         {
             "description": "Find IPs with SSL certificates from Uber Technologies",
-            "query": 'ssl:"Uber Technologies Inc"'
+            "query": "'ssl:\"Uber Technologies Inc\"'"
         },
         {
             "description": "Find IPs with HTTP status 200",
-            "query": 'http.status:200'
+            "query": "http.status:200"
         },
         {
             "description": "Find IPs with specific SSL certificate subject",
-            "query": 'ssl.cert.subject.CN:"*.uber.com"'
+            "query": "'ssl.cert.subject.CN:\"*.uber.com\"'"
         },
         {
             "description": "Find IPs with Apache server",
-            "query": 'http.server:Apache'
+            "query": "http.server:Apache"
         },
         {
             "description": "Find IPs in specific country",
-            "query": 'country:"United States"'
+            "query": "'country:\"United States\"'"
         },
         {
             "description": "Find IPs with specific port open",
-            "query": 'port:80'
+            "query": "port:80"
         },
         {
             "description": "Find IPs with specific product",
-            "query": 'product:"nginx"'
+            "query": "'product:\"nginx\"'"
         },
         {
             "description": "Find IPs with specific organization",
-            "query": 'org:"Amazon"'
+            "query": "'org:\"Amazon\"'"
         }
     ]
     
@@ -201,7 +206,7 @@ def examples():
     
     for i, example in enumerate(examples_data, 1):
         console.print(f"[cyan]{i}.[/cyan] [green]{example['description']}[/green]")
-        console.print(f"   [yellow]sipg search \"{example['query']}\"[/yellow]\n")
+        console.print(f"   [yellow]sipg search {example['query']}[/yellow]\n")
 
 
 @cli.command()
