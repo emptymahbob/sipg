@@ -19,7 +19,7 @@ def read_requirements():
 
 setup(
     name="sipg",
-    version="2.0.2",
+    version="2.1.0",
     author="Mahbob Alam",
     author_email="emptymahbob@gmail.com",
     description="A professional command-line tool for searching IP addresses using Shodan API",

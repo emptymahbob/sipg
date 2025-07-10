@@ -43,6 +43,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - IP address extraction and display
 - Basic file output functionality
 
+## [2.1.0] - 2024-12-19
+
+### Added
+- Added page range support with `--start-page` and `--end-page` options
+- Enhanced CLI help with detailed descriptions for all options
+- Added comprehensive examples showing how to use page ranges
+- Improved documentation explaining how output is saved and how to limit results
+
+### Changed
+- Enhanced search command with better help text and usage examples
+- Updated README with new options and detailed usage instructions
+- Improved user experience with clearer option descriptions
+
 ## [2.0.2] - 2024-12-19
 
 ### Fixed

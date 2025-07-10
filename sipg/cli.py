@@ -30,11 +30,11 @@ BANNER = r"""
 
 def print_banner():
     """Print the SIPG banner."""
-    console.print(Panel(BANNER, title="SIPG v2.0.2", subtitle="Made by @emptymahbob"))
+    console.print(Panel(BANNER, title="SIPG v2.1.0", subtitle="Made by @emptymahbob"))
 
 
 @click.group()
-@click.version_option(version="2.0.2", prog_name="SIPG")
+@click.version_option(version="2.1.0", prog_name="SIPG")
 def cli():
     """SIPG - Shodan IP Grabber
 
@@ -76,64 +76,65 @@ def configure(api_key: str):
 
 @cli.command()
 @click.argument('query', type=str)
-@click.option('-o', '--output', type=click.Path(), help='Save results to file')
-@click.option('-m', '--max-results', type=int, help='Maximum number of results to return')
-@click.option('-d', '--delay', type=float, default=1.0, help='Delay between API requests (seconds)')
-@click.option('--details', is_flag=True, help='Show detailed results with additional information')
-@click.option('--table', is_flag=True, help='Display results in a formatted table')
+@click.option('-o', '--output', type=click.Path(), help='Save results to file. If not specified, results are printed to the console. Only IPs are saved for simple output, or detailed JSON for --details.')
+@click.option('-m', '--max-results', type=int, help='Maximum number of results to return. Default: all available results.')
+@click.option('-d', '--delay', type=float, default=1.0, show_default=True, help='Delay (in seconds) between API requests to avoid rate limits.')
+@click.option('--details', is_flag=True, help='Show detailed results with additional information (organization, location, hostnames, etc).')
+@click.option('--table', is_flag=True, help='Display results in a formatted table (implies --details).')
+@click.option('--start-page', type=int, default=1, show_default=True, help='Start fetching results from this page (1-based).')
+@click.option('--end-page', type=int, help='End fetching results at this page (inclusive). If not set, fetches up to the last available page or max-results.')
 def search(query: str, output: Optional[str], max_results: Optional[int], 
-           delay: float, details: bool, table: bool):
+           delay: float, details: bool, table: bool, start_page: int, end_page: Optional[int]):
     """Search for IP addresses using Shodan.
     
     QUERY: The search query to use (e.g., ssl:"Uber Technologies Inc")
+
+    \b
+    Output:
+      - By default, prints results to the console.
+      - Use -o/--output to save results to a file (IPs only, or detailed JSON with --details).
+      - Use --max-results to limit the number of results.
+      - Use --start-page/--end-page to fetch results from a specific page range (each page = 100 results).
+      - Use --delay to avoid hitting Shodan rate limits (default: 1.0s).
+      - Use --details for full info, or --table for a formatted table.
+
+    Examples:
+      sipg search 'ssl:"Uber Technologies Inc"' --max-results 200
+      sipg search 'http.server:Apache' --details --start-page 2 --end-page 5
+      sipg search 'country:"United States"' -o us.txt --start-page 5 --end-page 10
     """
     try:
         grabber = ShodanIPGrabber()
         
         if details or table:
-            # Get detailed results
-            results = list(grabber.search_with_details(query, max_results, delay))
-            
+            results = list(grabber.search_with_details(query, max_results, delay, start_page, end_page))
             if table:
                 grabber.display_results_table(results)
             else:
-                # Display detailed results
                 for i, result in enumerate(results, 1):
                     console.print(f"\n[cyan]Result {i}:[/cyan]")
                     console.print(f"  [green]IP:[/green] {result['ip']}")
                     console.print(f"  [green]Port:[/green] {result.get('port', 'N/A')}")
                     console.print(f"  [green]Organization:[/green] {result.get('org', 'N/A')}")
-                    
                     location = result.get('location', {})
                     if location:
                         console.print(f"  [green]Location:[/green] {location.get('city', 'N/A')}, {location.get('country_name', 'N/A')}")
-                    
                     hostnames = result.get('hostnames', [])
                     if hostnames:
                         console.print(f"  [green]Hostnames:[/green] {', '.join(hostnames)}")
-                    
                     domains = result.get('domains', [])
                     if domains:
                         console.print(f"  [green]Domains:[/green] {', '.join(domains)}")
-            
-            # Save IPs to file if requested
             if output:
                 ips = [result['ip'] for result in results]
                 grabber.save_results_to_file(ips, output)
         else:
-            # Get simple IP results
-            results = list(grabber.search_ips(query, max_results, delay))
-            
-            # Display results
+            results = list(grabber.search_ips(query, max_results, delay, start_page, end_page))
             for i, ip in enumerate(results, 1):
                 console.print(f"{i}. https://{ip}")
-            
-            # Save to file if requested
             if output:
                 grabber.save_results_to_file(results, output)
-        
         console.print(f"\n[green]Search completed! Found {len(results)} results.[/green]")
-        
     except ShodanAPIError as e:
         console.print(f"[red]Error: {e}[/red]")
         sys.exit(1)

@@ -59,13 +59,15 @@ class ShodanIPGrabber:
             raise ShodanAPIError(f"Invalid JSON response: {e}")
     
     def search_ips(self, query: str, max_results: Optional[int] = None, 
-                   delay: float = 1.0) -> Iterator[str]:
+                   delay: float = 1.0, start_page: int = 1, end_page: Optional[int] = None) -> Iterator[str]:
         """Search for IP addresses using Shodan.
         
         Args:
             query: Search query string.
             max_results: Maximum number of results to return. If None, returns all.
             delay: Delay between API requests in seconds.
+            start_page: The first page to fetch (1-based).
+            end_page: The last page to fetch (inclusive). If None, fetches up to the last available page.
             
         Yields:
             IP addresses found.
@@ -77,7 +79,6 @@ class ShodanIPGrabber:
         if not api_key:
             raise ShodanAPIError("No API key configured. Use 'sipg configure' to set your API key.")
         
-        # Get total results count
         params = {
             'key': api_key,
             'query': query,
@@ -97,12 +98,17 @@ class ShodanIPGrabber:
             
             self.console.print(f"[green]Found {total_results} total results[/green]")
             
-            # Calculate number of pages
             results_per_page = 100
             total_pages = (total_results + results_per_page - 1) // results_per_page
             
             if max_results:
                 total_pages = min(total_pages, (max_results + results_per_page - 1) // results_per_page)
+            
+            # Apply custom page range
+            first_page = max(1, start_page)
+            last_page = min(end_page if end_page else total_pages, total_pages)
+            if first_page > last_page:
+                return
             
             ip_count = 0
             
@@ -111,33 +117,26 @@ class ShodanIPGrabber:
                 TextColumn("[progress.description]{task.description}"),
                 console=self.console
             ) as progress:
-                task = progress.add_task("Searching IPs...", total=total_pages)
+                task = progress.add_task(f"Searching IPs...", total=last_page - first_page + 1)
                 
-                for page in range(1, total_pages + 1):
-                    progress.update(task, description=f"Searching page {page}/{total_pages}")
-                    
+                for page in range(first_page, last_page + 1):
+                    progress.update(task, description=f"Searching page {page}/{last_page}")
                     params['page'] = page
                     response = self._make_request(
                         'https://api.shodan.io/shodan/host/search',
                         params
                     )
-                    
                     matches = response.get('matches', [])
                     for match in matches:
                         ip = match.get('ip_str')
                         if ip and self._is_valid_ipv4(ip):
                             ip_count += 1
                             yield ip
-                            
                             if max_results and ip_count >= max_results:
                                 return
-                    
                     progress.advance(task)
-                    
-                    # Rate limiting
-                    if page < total_pages:
+                    if page < last_page:
                         time.sleep(delay)
-                        
         except ShodanAPIError:
             raise
         except Exception as e:
@@ -158,13 +157,15 @@ class ShodanIPGrabber:
             return False
     
     def search_with_details(self, query: str, max_results: Optional[int] = None,
-                           delay: float = 1.0) -> Iterator[Dict[str, Any]]:
+                           delay: float = 1.0, start_page: int = 1, end_page: Optional[int] = None) -> Iterator[Dict[str, Any]]:
         """Search for IP addresses with additional details.
         
         Args:
             query: Search query string.
             max_results: Maximum number of results to return.
             delay: Delay between API requests in seconds.
+            start_page: The first page to fetch (1-based).
+            end_page: The last page to fetch (inclusive). If None, fetches up to the last available page.
             
         Yields:
             Dictionary containing IP and additional details.
@@ -198,6 +199,12 @@ class ShodanIPGrabber:
             if max_results:
                 total_pages = min(total_pages, (max_results + results_per_page - 1) // results_per_page)
             
+            # Apply custom page range
+            first_page = max(1, start_page)
+            last_page = min(end_page if end_page else total_pages, total_pages)
+            if first_page > last_page:
+                return
+            
             result_count = 0
             
             with Progress(
@@ -205,47 +212,26 @@ class ShodanIPGrabber:
                 TextColumn("[progress.description]{task.description}"),
                 console=self.console
             ) as progress:
-                task = progress.add_task("Searching with details...", total=total_pages)
+                task = progress.add_task(f"Searching details...", total=last_page - first_page + 1)
                 
-                for page in range(1, total_pages + 1):
-                    progress.update(task, description=f"Searching page {page}/{total_pages}")
-                    
+                for page in range(first_page, last_page + 1):
+                    progress.update(task, description=f"Searching page {page}/{last_page}")
                     params['page'] = page
                     response = self._make_request(
                         'https://api.shodan.io/shodan/host/search',
                         params
                     )
-                    
                     matches = response.get('matches', [])
                     for match in matches:
                         ip = match.get('ip_str')
                         if ip and self._is_valid_ipv4(ip):
                             result_count += 1
-                            
-                            # Extract useful information
-                            details = {
-                                'ip': ip,
-                                'port': match.get('port'),
-                                'hostnames': match.get('hostnames', []),
-                                'org': match.get('org'),
-                                'location': match.get('location', {}),
-                                'timestamp': match.get('timestamp'),
-                                'domains': match.get('domains', []),
-                                'ssl': match.get('ssl'),
-                                'http': match.get('http'),
-                                'data': match.get('data', '')[:200]  # First 200 chars
-                            }
-                            
-                            yield details
-                            
+                            yield match
                             if max_results and result_count >= max_results:
                                 return
-                    
                     progress.advance(task)
-                    
-                    if page < total_pages:
+                    if page < last_page:
                         time.sleep(delay)
-                        
         except ShodanAPIError:
             raise
         except Exception as e:
