@@ -7,7 +7,7 @@ name = "sipg"
 dynamic = ["version"]
 description = "A professional command-line tool for searching IP addresses using Shodan API"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Mahbob Alam", email = "emptymahbob@gmail.com"}
 ]
