@@ -48,4 +48,4 @@ Fix CLI argument parsing issues that prevented users from using complex Shodan q
 3. Create GitHub release using the provided release notes
 
 ## 🎉 Impact
-Users can now use any Shodan query syntax without CLI parsing errors, making the tool much more powerful and user-friendly. 
+Users can now use any Shodan query syntax without CLI parsing errors, making the tool much more powerful and user-friendly.

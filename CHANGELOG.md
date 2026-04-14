@@ -79,4 +79,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - No more errors when using queries with spaces or quotes
-- No more confusion in help or examples 
+- No more confusion in help or examples

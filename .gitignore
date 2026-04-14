@@ -163,6 +163,17 @@ cython_debug/
 
 # SIPG specific
 config.json
-*.txt
-!requirements.txt
-!README.md 
+.sipg/
+.venv/
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Local outputs / user generated files
+results/
+output/
+logs/
+
+# Local reference/source dumps
+ipfinder code for example/

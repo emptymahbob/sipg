@@ -37,4 +37,4 @@ publish: build ## Build and publish to PyPI
 check: format lint test ## Run all checks (format, lint, test)
 
 dev-setup: install-dev ## Set up development environment
-	pre-commit install 
+	pre-commit install

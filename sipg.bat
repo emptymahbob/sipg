@@ -1,2 +1,2 @@
 @echo off
-python -m sipg.cli %* 
+python -m sipg.cli %*

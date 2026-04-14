@@ -9,7 +9,7 @@
 <p align="center"><b>Example Search Result</b></p>
 <p align="center"><img src="search%20result.png" alt="Example Search Result" width="700"></p>
 
-A professional command-line tool for searching IP addresses using the Shodan API. SIPG provides an intuitive interface for security researchers, penetration testers, and network administrators to discover and analyze internet-connected devices.
+A professional command-line tool for searching internet assets via Shodan. SIPG supports API mode and a free mode (no API key) so researchers can gather IPs, domains, and subdomains with one workflow.
 
 ## ✨ Features
 
@@ -21,6 +21,9 @@ A professional command-line tool for searching IP addresses using the Shodan API
 - 🌍 **Cross-Platform**: Works on Windows, macOS, and Linux
 - 📈 **Progress Tracking**: Real-time progress indicators for long searches
 - 🎯 **Multiple Output Formats**: Simple IP lists, detailed results, or formatted tables
+- 🆓 **No-Key Search Mode**: Facet-based collection without API key (`--mode free`)
+- 🧩 **Asset Collection**: Collect `ips`, `domains`, `subdomains`, or `all`
+- 🧠 **Beginner Filter Mode**: Build full Shodan queries with `--filter`
 
 ## 🚀 Quick Start
 
@@ -69,6 +72,15 @@ sipg search 'http.server:Apache' --details --start-page 2 --end-page 5
 
 # Save results from pages 5 to 10 to a file
 sipg search 'country:"United States"' -o us.txt --start-page 5 --end-page 10
+
+# No-key mode (facet-based)
+sipg search 'ssl:"nvidia"' --mode free --silent
+
+# Beginner filter mode
+echo "nvidia.com" | sipg search --filter ssl --silent
+
+# Collect domains and subdomains too
+sipg search 'ssl:"nvidia"' --mode free --collect all -o assets.txt
 ```
 
 ## 📖 Commands
@@ -84,9 +96,69 @@ Search for IP addresses using Shodan.
 - `-m, --max-results N`: Maximum number of results to return. Default: all available results.
 - `-d, --delay SECONDS`: Delay (in seconds) between API requests to avoid rate limits.
 - `--details`: Show detailed results with additional information (organization, location, hostnames, etc).
-- `--table`: Display results in a formatted table (implies --details).
+- `--table`: Display results in an expanded formatted table (IP, org, ASN, ISP, transport, domains, product, OS, timestamp, vuln count).
 - `--start-page N`: Start fetching results from this page (1-based, default: 1).
 - `--end-page N`: End fetching results at this page (inclusive). If not set, fetches up to the last available page or the maximum number of results.
+- `-M, --mode [api|free]`: Choose engine.
+- `--collect [ips|domains|subdomains|all]`: Choose asset type to collect.
+- `-f, --filter TEXT`: Wrap input as `filter:"value"` (example: `--filter ssl`).
+- `-s, --silent`: Print raw values only.
+- `-O, --output-format [txt|json|csv]`: Choose output format for `--output`.
+- `-F, --fields`: Comma-separated fields for table/csv schemas (example: `ip,port,org,asn`).
+
+### `sipg collect <query>`
+Collect IPs, domains, and subdomains with explicit export format support.
+
+**Options:**
+- `-o, --output FILE`: Output file path (required).
+- `--format [txt|json|csv]`: Export format.
+- `-M, --mode [api|free]`: Collection mode.
+- `-c, --collect [ips|domains|subdomains|all]`: Which asset types to collect.
+- `-f, --filter TEXT`: Beginner mode filter wrapper.
+- `-s, --silent`: Raw output only.
+- `-F, --fields`: Custom CSV fields (collect supports: `type,value`).
+
+**Examples:**
+```bash
+# Collect all assets and export as JSON
+sipg collect 'ssl:"nvidia"' --collect all --mode free -o assets.json --format json
+
+# Use beginner filter mode with stdin, then export CSV
+echo "nvidia.com" | sipg collect --filter ssl --mode free -o assets.csv --format csv
+
+# Collect more IPs without API key
+sipg search 'ssl:"nvidia"' --mode free -m 5000
+
+# Customize table columns
+sipg search 'port:443' --table --mode api --fields ip,port,org,asn,city,country,vuln_count
+
+# Customize API CSV schema
+sipg search 'http.server:Apache' --details --mode api -o apache.csv --output-format csv --fields ip,port,org,isp,product,timestamp
+```
+
+### `sipg fields`
+Show all supported field names for `--fields` (with examples), for both `search` and `collect`.
+
+```bash
+sipg fields
+
+# Machine-readable output for scripts
+sipg fields --json
+```
+
+### Short aliases
+
+SIPG includes short command aliases for faster usage:
+
+```bash
+s   # search
+c   # collect
+cfg # configure
+i   # info
+ex  # examples
+cl  # clear
+fs  # fields
+```
 
 **How output is saved:**
 - By default, results are printed to the console.

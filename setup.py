@@ -5,24 +5,31 @@ A professional command-line tool for searching IP addresses using Shodan API
 """
 
 from setuptools import setup, find_packages
-import os
+
 
 # Read the README file
 def read_readme():
     with open("README.md", "r", encoding="utf-8") as fh:
         return fh.read()
 
+
 # Read requirements
 def read_requirements():
     with open("requirements.txt", "r", encoding="utf-8") as fh:
-        return [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+        return [
+            line.strip() for line in fh if line.strip() and not line.startswith("#")
+        ]
+
 
 setup(
     name="sipg",
-    version="2.1.1",
+    version="2.1.2",
     author="Mahbob Alam",
     author_email="emptymahbob@gmail.com",
-    description="A professional command-line tool for searching IP addresses using Shodan API",
+    description=(
+        "A professional command-line tool for searching IP addresses using "
+        "Shodan API"
+    ),
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     url="https://github.com/emptymahbob/sipg",
@@ -30,7 +37,6 @@ setup(
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Information Technology",
-
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
@@ -61,4 +67,4 @@ setup(
         "Source": "https://github.com/emptymahbob/sipg",
         "Documentation": "https://github.com/emptymahbob/sipg#readme",
     },
-) 
+)

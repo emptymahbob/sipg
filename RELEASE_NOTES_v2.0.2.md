@@ -41,4 +41,4 @@ None - this is a bug fix release that maintains full backward compatibility.
 
 ## 🚀 Migration
 
-No migration required - existing commands will continue to work, and new complex queries will now work properly. 
+No migration required - existing commands will continue to work, and new complex queries will now work properly.
