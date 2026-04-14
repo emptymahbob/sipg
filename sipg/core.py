@@ -30,7 +30,7 @@ class ShodanAPIError(Exception):
 
 class ShodanIPGrabber:
     """Main class for Shodan IP grabbing functionality."""
-
+    
     DETAIL_FIELD_ALIASES: Dict[str, str] = {
         "ip": "ip_str",
         "ip_str": "ip_str",
@@ -87,7 +87,7 @@ class ShodanIPGrabber:
         api_min_interval: Optional[float] = None,
     ):
         """Initialize the Shodan IP Grabber.
-
+        
         Args:
             config: Configuration object. If None, creates a new one.
             api_min_interval: Minimum seconds between api.shodan.io requests (0 = no cap).
@@ -639,7 +639,7 @@ class ShodanIPGrabber:
                 return response.json()
             except ValueError as e:
                 raise ShodanAPIError(f"Invalid JSON response: {e}")
-
+    
         if last_error:
             msg = str(last_error).replace(self.config.get_api_key() or "", "<api_key>")
             raise ShodanAPIError(f"API request failed: {msg}")
@@ -654,17 +654,17 @@ class ShodanIPGrabber:
         end_page: Optional[int] = None,
     ) -> Iterator[str]:
         """Search for IP addresses using Shodan.
-
+        
         Args:
             query: Search query string.
             max_results: Maximum number of results to return. If None, returns all.
             delay: Delay between API requests in seconds.
             start_page: The first page to fetch (1-based).
             end_page: The last page to fetch (inclusive). If None, fetches up to the last available page.
-
+            
         Yields:
             IP addresses found.
-
+            
         Raises:
             ShodanAPIError: If the API request fails.
         """
@@ -675,38 +675,38 @@ class ShodanIPGrabber:
             )
 
         params = {"key": api_key, "query": query, "page": 1}
-
+        
         try:
             initial_response = self._make_request(
                 "https://api.shodan.io/shodan/host/search", params
             )
             total_results = initial_response.get("total", 0)
-
+            
             if total_results == 0:
                 self.console.print(
                     "[yellow]No results found for the given query.[/yellow]"
                 )
                 return
-
+            
             self.console.print(f"[green]Found {total_results} total results[/green]")
-
+            
             results_per_page = 100
             total_pages = (total_results + results_per_page - 1) // results_per_page
-
+            
             if max_results:
                 total_pages = min(
                     total_pages,
                     (max_results + results_per_page - 1) // results_per_page,
                 )
-
+            
             # Apply custom page range
             first_page = max(1, start_page)
             last_page = min(end_page if end_page else total_pages, total_pages)
             if first_page > last_page:
                 return
-
+            
             ip_count = 0
-
+            
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -715,7 +715,7 @@ class ShodanIPGrabber:
                 task = progress.add_task(
                     "Searching IPs...", total=last_page - first_page + 1
                 )
-
+                
                 for page in range(first_page, last_page + 1):
                     progress.update(
                         task, description=f"Searching page {page}/{last_page}"
@@ -739,13 +739,13 @@ class ShodanIPGrabber:
             raise
         except Exception as e:
             raise ShodanAPIError(f"Unexpected error: {e}")
-
+    
     def _is_valid_ipv4(self, ip: str) -> bool:
         """Check if an IP address is a valid IPv4 address.
-
+        
         Args:
             ip: IP address string.
-
+            
         Returns:
             True if valid IPv4, False otherwise.
         """
@@ -753,7 +753,7 @@ class ShodanIPGrabber:
             return ipaddress.ip_address(ip).version == 4
         except ValueError:
             return False
-
+    
     def search_with_details(
         self,
         query: str,
@@ -763,14 +763,14 @@ class ShodanIPGrabber:
         end_page: Optional[int] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Search for IP addresses with additional details.
-
+        
         Args:
             query: Search query string.
             max_results: Maximum number of results to return.
             delay: Delay between API requests in seconds.
             start_page: The first page to fetch (1-based).
             end_page: The last page to fetch (inclusive). If None, fetches up to the last available page.
-
+            
         Yields:
             Dictionary containing IP and additional details.
         """
@@ -781,38 +781,38 @@ class ShodanIPGrabber:
             )
 
         params = {"key": api_key, "query": query, "page": 1}
-
+        
         try:
             initial_response = self._make_request(
                 "https://api.shodan.io/shodan/host/search", params
             )
             total_results = initial_response.get("total", 0)
-
+            
             if total_results == 0:
                 self.console.print(
                     "[yellow]No results found for the given query.[/yellow]"
                 )
                 return
-
+            
             self.console.print(f"[green]Found {total_results} total results[/green]")
-
+            
             results_per_page = 100
             total_pages = (total_results + results_per_page - 1) // results_per_page
-
+            
             if max_results:
                 total_pages = min(
                     total_pages,
                     (max_results + results_per_page - 1) // results_per_page,
                 )
-
+            
             # Apply custom page range
             first_page = max(1, start_page)
             last_page = min(end_page if end_page else total_pages, total_pages)
             if first_page > last_page:
                 return
-
+            
             result_count = 0
-
+            
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -821,7 +821,7 @@ class ShodanIPGrabber:
                 task = progress.add_task(
                     "Searching details...", total=last_page - first_page + 1
                 )
-
+                
                 for page in range(first_page, last_page + 1):
                     progress.update(
                         task, description=f"Searching page {page}/{last_page}"
@@ -845,19 +845,19 @@ class ShodanIPGrabber:
             raise
         except Exception as e:
             raise ShodanAPIError(f"Unexpected error: {e}")
-
+    
     def display_results_table(
         self, results: List[Dict[str, Any]], fields: Optional[List[str]] = None
     ) -> None:
         """Display results in a formatted table.
-
+        
         Args:
             results: List of result dictionaries.
         """
         if not results:
             self.console.print("[yellow]No results to display.[/yellow]")
             return
-
+        
         normalized_fields = self._normalize_fields(fields) or self.DEFAULT_TABLE_FIELDS
         header_map = {
             "ip_str": "IP",
@@ -880,21 +880,21 @@ class ShodanIPGrabber:
         table = Table(title="Shodan Search Results")
         for field in normalized_fields:
             table.add_column(header_map.get(field, field.upper()))
-
+        
         for result in results:
             row = [
                 self._get_detail_field_value(result, field)
                 for field in normalized_fields
             ]
             table.add_row(*row)
-
+        
         self.console.print(table)
-
+    
     def save_results_to_file(
         self, results: List[str], filename: str, add_protocol: bool = False
     ) -> None:
         """Save results to a file.
-
+        
         Args:
             results: List of IP addresses.
             filename: Output filename.
@@ -946,7 +946,7 @@ class ShodanIPGrabber:
             self.console.print(f"[green]Results saved to {filename}[/green]")
         except IOError as e:
             self.console.print(f"[red]Failed to save results: {e}[/red]")
-
+    
     def save_detailed_results_to_file(
         self,
         results: List[Dict[str, Any]],
@@ -984,16 +984,16 @@ class ShodanIPGrabber:
 
     def get_api_info(self) -> Dict[str, Any]:
         """Get information about the current API key.
-
+        
         Returns:
             Dictionary containing API information.
-
+            
         Raises:
             ShodanAPIError: If the API request fails.
         """
         api_key = self.config.get_api_key()
         if not api_key:
             raise ShodanAPIError("No API key configured.")
-
+        
         params = {"key": api_key}
         return self._make_request("https://api.shodan.io/api-info", params)

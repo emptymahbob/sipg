@@ -1,51 +1,56 @@
-# SIPG v2.0.2 Release Summary
+# SIPG v2.1.2 Release Summary
 
-## 🎯 Release Goal
-Fix CLI argument parsing issues that prevented users from using complex Shodan queries with spaces and special characters.
+## Release Goal
+Deliver a major usability and capability upgrade so SIPG works strongly in both API-key and no-key workflows, with better collection options, output control, and reliability.
 
-## ✅ Completed Tasks
+## Highlights
+- Added dual-mode operation: `api` mode and `free` mode.
+- Upgraded free mode to deep, ipfinder-style collection behavior for larger no-key IP collection.
+- Added dedicated `collect` command with `txt`, `json`, and `csv` export formats.
+- Added field customization support with `--fields` and a new `fields` helper command.
+- Simplified command usage with short aliases and short flags.
 
-### 1. **Fixed Core Issue**
-- **Problem**: `sipg search "ssl:"Uber Technologies Inc""` was failing with "Got unexpected extra arguments"
-- **Root Cause**: CLI was using `nargs=-1` which split quoted strings into multiple arguments
-- **Solution**: Changed to `type=str` to handle entire query as single string
-- **Result**: ✅ All complex queries now work perfectly
+## Key Features Added
+- New `sipg collect` command for collecting:
+  - `ips`
+  - `domains`
+  - `subdomains`
+  - `all`
+- New `--fields` support:
+  - `search`: customize table columns and CSV schema.
+  - `collect`: customize CSV schema (`type,value`).
+- New `sipg fields` command:
+  - Human-readable field list.
+  - `--json` machine-readable output for scripts/automation.
+- Added short command aliases:
+  - `s`, `c`, `cfg`, `i`, `ex`, `cl`, `fs`
+- Added short flag forms for common options (for faster CLI usage).
 
-### 2. **Updated Documentation**
-- Fixed all examples in CLI help text
-- Updated `examples` command output
-- Corrected main CLI docstring
-- Updated version numbers across all files
+## Reliability and Behavior Improvements
+- Improved no-key facet parsing for current Shodan HTML structures.
+- Added stronger retry/backoff behavior for transient network/API issues.
+- Better handling and messaging for `401`, `403`, `429`, and `503` responses.
+- Free deep IP collection now streams results progressively.
+- Removed noisy free-mode progress text; output is cleaner and more automation-friendly.
+- Restored concise total result summaries (while keeping `--silent` truly minimal).
 
-### 3. **Version Management**
-- Updated version to 2.0.2 in:
-  - `sipg/__init__.py`
-  - `sipg/cli.py` (version option and banner)
-  - `setup.py`
-  - `pyproject.toml`
-  - `CHANGELOG.md`
+## UX and Documentation
+- Simplified mode choices to `api` and `free` (`free` now covers deep behavior).
+- Improved `search --details` and `search --table` output usefulness.
+- README fully updated with new commands, aliases, options, and examples.
+- `.gitignore` updated to exclude local/dev/output artifacts more safely.
 
-### 4. **Testing**
-- ✅ Tested `sipg search 'ssl:"Uber Technologies Inc"'` - Found 41 results
-- ✅ Tested `sipg search 'ssl.cert.subject.CN:"*.uber.com"'` - Found 36 results
-- ✅ Tested `sipg search http.server:Apache` - No results but no errors
-- ✅ All examples now show correct syntax
+## Version and Packaging
+- Version bumped to `2.1.2` in project metadata and CLI output.
+- Build validation completed:
+  - `twine check dist/*` passed for wheel and sdist.
+  - Fresh virtual environment install from wheel succeeded.
+  - CLI smoke checks (`--version`, `--help`, alias help, `fields --json`) succeeded.
 
-### 5. **GitHub Release**
-- ✅ Committed all changes
-- ✅ Created git tag v2.0.2
-- ✅ Pushed to GitHub
-- ✅ Created release notes
+## Testing
+- Test coverage updated for new implementations and behavior paths, including CLI/config changes tied to this release.
 
-## 📦 Build Status
-- ✅ Successfully built sdist and wheel
-- ✅ Ready for PyPI upload
-- ✅ Ready for Test PyPI upload
-
-## 🚀 Next Steps
-1. Upload to Test PyPI (when ready)
-2. Upload to PyPI (when ready)
-3. Create GitHub release using the provided release notes
-
-## 🎉 Impact
-Users can now use any Shodan query syntax without CLI parsing errors, making the tool much more powerful and user-friendly.
+## Release Status
+- Changes committed and pushed to `main`.
+- Tag `v2.1.2` created and pushed.
+- Ready for GitHub Release publishing and PyPI/TestPyPI publishing workflows.
