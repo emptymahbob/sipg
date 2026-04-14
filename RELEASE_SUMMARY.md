@@ -1,4 +1,4 @@
-# SIPG v2.1.2 Release Summary
+# SIPG v2.1.3 Release Summary
 
 ## Release Goal
 Deliver a major usability and capability upgrade so SIPG works strongly in both API-key and no-key workflows, with better collection options, output control, and reliability.
@@ -41,7 +41,7 @@ Deliver a major usability and capability upgrade so SIPG works strongly in both 
 - `.gitignore` updated to exclude local/dev/output artifacts more safely.
 
 ## Version and Packaging
-- Version bumped to `2.1.2` in project metadata and CLI output.
+- Version bumped to `2.1.3` in project metadata and CLI output.
 - Build validation completed:
   - `twine check dist/*` passed for wheel and sdist.
   - Fresh virtual environment install from wheel succeeded.
@@ -52,5 +52,5 @@ Deliver a major usability and capability upgrade so SIPG works strongly in both 
 
 ## Release Status
 - Changes committed and pushed to `main`.
-- Tag `v2.1.2` created and pushed.
+- Tag `v2.1.3` to be created and pushed.
 - Ready for GitHub Release publishing and PyPI/TestPyPI publishing workflows.
