@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sipg"
-version = "2.1.3"
-description = "A professional command-line tool for searching IP addresses using Shodan API"
+version = "2.1.5"
+description = "SIPG (Shodan IP Grabber) — search and collect IPs, domains, and subdomains via Shodan (API and free modes)."
 readme = "README.md"
 license = "MIT"
 authors = [

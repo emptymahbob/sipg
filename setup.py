@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Setup script for SIPG (Shodan IP Grabber)
-A professional command-line tool for searching IP addresses using Shodan API
+Setup script for SIPG — Shodan IP Grabber.
+A professional command-line tool for searching IP addresses using Shodan API.
 """
 
 from setuptools import setup, find_packages
@@ -23,12 +23,12 @@ def read_requirements():
 
 setup(
     name="sipg",
-    version="2.1.3",
+    version="2.1.5",
     author="Mahbob Alam",
     author_email="emptymahbob@gmail.com",
     description=(
-        "A professional command-line tool for searching IP addresses using "
-        "Shodan API"
+        "SIPG (Shodan IP Grabber) — search and collect IPs, domains, and "
+        "subdomains via Shodan (API and free modes)."
     ),
     long_description=read_readme(),
     long_description_content_type="text/markdown",

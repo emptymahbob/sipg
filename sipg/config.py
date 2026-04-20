@@ -1,5 +1,5 @@
 """
-Configuration management for SIPG.
+Configuration management for SIPG (Shodan IP Grabber).
 """
 
 import json
@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any
 
 
 class Config:
-    """Configuration manager for SIPG."""
+    """Configuration manager for SIPG (Shodan IP Grabber)."""
 
     def __init__(self, config_file: Optional[str] = None):
         """Initialize configuration manager.
@@ -56,7 +56,11 @@ class Config:
         Returns:
             API key if found, None otherwise.
         """
-        return self._config.get("api_key")
+        k = self._config.get("api_key")
+        if k is None:
+            return None
+        s = str(k).strip()
+        return s if s else None
 
     def set_api_key(self, api_key: str) -> None:
         """Set Shodan API key in configuration.

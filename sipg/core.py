@@ -1,5 +1,5 @@
 """
-Core functionality for SIPG.
+Core functionality for SIPG (Shodan IP Grabber).
 """
 
 import time
@@ -35,6 +35,7 @@ class ShodanIPGrabber:
         "ip": "ip_str",
         "ip_str": "ip_str",
         "port": "port",
+        "ports": "ports",
         "transport": "transport",
         "org": "org",
         "asn": "asn",
@@ -372,6 +373,103 @@ class ShodanIPGrabber:
             if delay > 0:
                 time.sleep(delay)
 
+    def _group_matches_by_ip(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Combine banners with the same ip_str: ports unioned, hostnames/domains/vulns merged."""
+        grouped: Dict[str, Dict[str, Any]] = {}
+        order: List[str] = []
+        for match in results:
+            ip = match.get("ip_str")
+            if not ip:
+                continue
+            if ip not in grouped:
+                grouped[ip] = dict(match)
+                grouped[ip]["_all_ports"] = []
+                grouped[ip]["hostnames"] = list(match.get("hostnames") or [])
+                grouped[ip]["domains"] = list(match.get("domains") or [])
+                grouped[ip]["_vulns_set"] = set()
+                order.append(ip)
+            entry = grouped[ip]
+            port = match.get("port")
+            if port is not None and port not in entry["_all_ports"]:
+                entry["_all_ports"].append(port)
+            for h in match.get("hostnames") or []:
+                if h not in entry["hostnames"]:
+                    entry["hostnames"].append(h)
+            for d in match.get("domains") or []:
+                if d not in entry["domains"]:
+                    entry["domains"].append(d)
+            vulns = match.get("vulns")
+            if isinstance(vulns, dict):
+                entry["_vulns_set"].update(vulns.keys())
+            elif isinstance(vulns, list):
+                entry["_vulns_set"].update(str(v) for v in vulns)
+        out: List[Dict[str, Any]] = []
+        for ip in order:
+            entry = grouped[ip]
+            entry["_all_ports"].sort()
+            vulns_set = entry.pop("_vulns_set", set())
+            if vulns_set:
+                entry["vulns"] = sorted(vulns_set)
+            out.append(entry)
+        return out
+
+    @staticmethod
+    def _ports_from_host_payload(payload: Dict[str, Any]) -> List[int]:
+        """Unique sorted ports from GET /shodan/host/{ip} JSON (`data` list)."""
+        seen: Set[int] = set()
+        out: List[int] = []
+        for item in payload.get("data") or []:
+            p = item.get("port")
+            if isinstance(p, int) and p not in seen:
+                seen.add(p)
+                out.append(p)
+        out.sort()
+        return out
+
+    def get_shodan_host(self, ip: str) -> Dict[str, Any]:
+        """GET /shodan/host/{ip} — full host record (all banners / ports Shodan knows)."""
+        api_key = self.config.get_api_key()
+        if not api_key:
+            raise ShodanAPIError("No API key configured.")
+        params = {"key": api_key}
+        return self._make_request(f"https://api.shodan.io/shodan/host/{ip}", params)
+
+    def _apply_shodan_host_port_enrichment(self, rows: List[Dict[str, Any]]) -> None:
+        """Set `_host_ports` from GET /shodan/host/{ip} (search-merged `_all_ports` is unchanged)."""
+        failed: List[str] = []
+        for row in rows:
+            ip = row.get("ip_str")
+            if not ip or not self._is_valid_ipv4(ip):
+                continue
+            try:
+                payload = self.get_shodan_host(ip)
+            except ShodanAPIError:
+                failed.append(ip)
+                continue
+            ports = self._ports_from_host_payload(payload)
+            if ports:
+                row["_host_ports"] = ports
+        if failed:
+            self.console.print(
+                f"[yellow]Host lookup failed for {len(failed)} IP(s); "
+                "the `ports` column falls back to search matches for those rows.[/yellow]"
+            )
+
+    def prepare_detail_tabular_results(
+        self,
+        results: List[Dict[str, Any]],
+        fields: Optional[List[str]],
+    ) -> tuple[List[Dict[str, Any]], List[str]]:
+        """Group by IP when port/ports columns are used; `ports` triggers full host lookups."""
+        nf = self._normalize_fields(fields) or self.DEFAULT_TABLE_FIELDS
+        want_port_cols = "port" in nf or "ports" in nf
+        out = self._group_matches_by_ip(results) if want_port_cols else list(results)
+        if "ports" in nf and out:
+            self._apply_shodan_host_port_enrichment(out)
+        return out, nf
+
     def _normalize_fields(self, fields: Optional[List[str]]) -> Optional[List[str]]:
         """Normalize user-provided field names for detail outputs."""
         if not fields:
@@ -383,14 +481,24 @@ class ShodanIPGrabber:
                 continue
             mapped = self.DETAIL_FIELD_ALIASES.get(key)
             if mapped is None:
-                raise ShodanAPIError(f"Unsupported field: {field}")
+                supported = sorted(set(self.DETAIL_FIELD_ALIASES.keys()))
+                raise ShodanAPIError(
+                    f"Unsupported field: {field}\n"
+                    f"Supported: {', '.join(supported)}\n"
+                    f"Run `sipg fields` for descriptions and examples."
+                )
             if mapped not in normalized:
                 normalized.append(mapped)
         if not normalized:
             raise ShodanAPIError("No valid fields provided.")
         return normalized
 
-    def _get_detail_field_value(self, result: Dict[str, Any], field: str) -> str:
+    def _get_detail_field_value(
+        self,
+        result: Dict[str, Any],
+        field: str,
+        domain_suffix_filter: Optional[List[str]] = None,
+    ) -> str:
         """Extract displayable field value from a Shodan result."""
         location = result.get("location", {}) or {}
         if field == "ip_str":
@@ -405,16 +513,39 @@ class ShodanIPGrabber:
             )
         if field == "hostnames":
             hostnames = result.get("hostnames", []) or []
-            text = ", ".join(hostnames[:2])
-            if len(hostnames) > 2:
-                text += f" (+{len(hostnames) - 2} more)"
-            return text or "N/A"
+            if domain_suffix_filter:
+                hostnames = [
+                    h
+                    for h in hostnames
+                    if self.name_matches_domain_suffix(str(h), domain_suffix_filter)
+                ]
+            return ", ".join(str(h) for h in hostnames) or "N/A"
         if field == "domains":
             domains = result.get("domains", []) or []
-            text = ", ".join(domains[:2])
-            if len(domains) > 2:
-                text += f" (+{len(domains) - 2} more)"
-            return text or "N/A"
+            if domain_suffix_filter:
+                domains = [
+                    d
+                    for d in domains
+                    if self.name_matches_domain_suffix(str(d), domain_suffix_filter)
+                ]
+            return ", ".join(str(d) for d in domains) or "N/A"
+        if field == "port":
+            # Search matches only (merged per IP in _group_matches_by_ip).
+            merged = result.get("_all_ports")
+            if merged:
+                return ", ".join(str(p) for p in merged)
+            port = result.get("port")
+            return str(port) if port is not None else "N/A"
+        if field == "ports":
+            # Full host list when `ports` is in -F (from GET /shodan/host/{ip}); else search matches.
+            host_ports = result.get("_host_ports")
+            if host_ports:
+                return ", ".join(str(p) for p in host_ports)
+            merged = result.get("_all_ports")
+            if merged:
+                return ", ".join(str(p) for p in merged)
+            port = result.get("port")
+            return str(port) if port is not None else "N/A"
         if field == "vulns":
             vulns = result.get("vulns", {})
             if isinstance(vulns, dict):
@@ -435,6 +566,39 @@ class ShodanIPGrabber:
             return ";".join(str(v) for v in value)
         return str(value)
 
+    @staticmethod
+    def _normalize_domain_suffixes(raw: Optional[str]) -> Optional[List[str]]:
+        """Parse comma-separated suffixes; strip leading dots, lowercase (e.g. `.mil,.gov` → `mil,gov`)."""
+        if not raw or not str(raw).strip():
+            return None
+        out: List[str] = []
+        for part in str(raw).split(","):
+            s = part.strip().lower().lstrip(".")
+            if s:
+                out.append(s)
+        return out or None
+
+    @staticmethod
+    def name_matches_domain_suffix(name: str, suffixes: List[str]) -> bool:
+        """True if hostname/domain ends at a label boundary with one of the suffixes.
+
+        `army.mil` matches suffix `mil`; `mapshare.dsa.mil.ng` does not (ends with `.mil.ng`).
+        """
+        n = name.strip().lower()
+        if not n:
+            return False
+        for suf in suffixes:
+            if n == suf or n.endswith("." + suf):
+                return True
+        return False
+
+    def _filter_asset_list(
+        self, items: List[str], suffixes: Optional[List[str]]
+    ) -> List[str]:
+        if not suffixes:
+            return items
+        return [x for x in items if self.name_matches_domain_suffix(x, suffixes)]
+
     def search_assets(
         self,
         query: str,
@@ -444,11 +608,18 @@ class ShodanIPGrabber:
         delay: float = 1.0,
         start_page: int = 1,
         end_page: Optional[int] = None,
+        domain_suffix: Optional[str] = None,
     ) -> Dict[str, List[str]]:
         """Search and collect assets (ips/domains/subdomains)."""
-        collect_domains = collect in ("domains", "all")
-        collect_subdomains = collect in ("subdomains", "all")
-        collect_ips = collect in ("ips", "all")
+        collect_values = {part.strip().lower() for part in collect.split(",") if part.strip()}
+        if not collect_values:
+            collect_values = {"ips"}
+        if "all" in collect_values:
+            collect_values = {"ips", "domains", "subdomains"}
+        collect_domains = "domains" in collect_values
+        collect_subdomains = "subdomains" in collect_values
+        collect_ips = "ips" in collect_values
+        suffixes = self._normalize_domain_suffixes(domain_suffix)
 
         # Prefer API mode when available for richer and paginated data.
         api_key = self.config.get_api_key()
@@ -487,11 +658,21 @@ class ShodanIPGrabber:
                     if collect_domains:
                         for domain in result.get("domains", []) or []:
                             if domain:
-                                domains.add(str(domain))
+                                d = str(domain)
+                                if suffixes and not self.name_matches_domain_suffix(
+                                    d, suffixes
+                                ):
+                                    continue
+                                domains.add(d)
                     if collect_subdomains:
                         for hostname in result.get("hostnames", []) or []:
                             if hostname:
-                                subdomains.add(str(hostname))
+                                h = str(hostname)
+                                if suffixes and not self.name_matches_domain_suffix(
+                                    h, suffixes
+                                ):
+                                    continue
+                                subdomains.add(h)
                 return {
                     "ips": ips if collect_ips else [],
                     "domains": sorted(domains) if collect_domains else [],
@@ -515,12 +696,18 @@ class ShodanIPGrabber:
                 )
             # Domains/subdomains are still best-effort via facets in free mode.
             if collect_domains:
-                results["domains"] = self._search_facet_without_api_key(
-                    query, "domain", max_results
+                results["domains"] = self._filter_asset_list(
+                    self._search_facet_without_api_key(
+                        query, "domain", max_results
+                    ),
+                    suffixes,
                 )
             if collect_subdomains:
-                results["subdomains"] = self._search_facet_without_api_key(
-                    query, "hostname", max_results
+                results["subdomains"] = self._filter_asset_list(
+                    self._search_facet_without_api_key(
+                        query, "hostname", max_results
+                    ),
+                    suffixes,
                 )
             return results
 
@@ -531,12 +718,18 @@ class ShodanIPGrabber:
                 query, "ip", max_results
             )
         if collect_domains:
-            results["domains"] = self._search_facet_without_api_key(
-                query, "domain", max_results
+            results["domains"] = self._filter_asset_list(
+                self._search_facet_without_api_key(
+                    query, "domain", max_results
+                ),
+                suffixes,
             )
         if collect_subdomains:
-            results["subdomains"] = self._search_facet_without_api_key(
-                query, "hostname", max_results
+            results["subdomains"] = self._filter_asset_list(
+                self._search_facet_without_api_key(
+                    query, "hostname", max_results
+                ),
+                suffixes,
             )
         return results
 
@@ -550,7 +743,19 @@ class ShodanIPGrabber:
             if is_shodan_api:
                 self._throttle_shodan_api()
             try:
-                response = self.session.get(url, params=params, timeout=30)
+                # api.shodan.io: use JSON Accept + python-requests User-Agent. The session
+                # defaults to a browser UA for www.shodan.io facet HTML; Shodan has been
+                # observed to return 403 on the REST API with that UA (bare requests.get
+                # works with the same key).
+                api_headers = None
+                if is_shodan_api:
+                    api_headers = {
+                        "Accept": "application/json",
+                        "User-Agent": f"python-requests/{requests.__version__}",
+                    }
+                response = self.session.get(
+                    url, params=params, timeout=30, headers=api_headers
+                )
             except requests.exceptions.RequestException as e:
                 last_error = e
                 if attempt >= max_attempts - 1:
@@ -846,22 +1051,20 @@ class ShodanIPGrabber:
         except Exception as e:
             raise ShodanAPIError(f"Unexpected error: {e}")
     
-    def display_results_table(
-        self, results: List[Dict[str, Any]], fields: Optional[List[str]] = None
+    def print_detail_table_rows(
+        self,
+        prepared: List[Dict[str, Any]],
+        normalized_fields: List[str],
+        domain_suffix_filter: Optional[List[str]] = None,
     ) -> None:
-        """Display results in a formatted table.
-        
-        Args:
-            results: List of result dictionaries.
-        """
-        if not results:
+        """Render a Rich table from rows returned by prepare_detail_tabular_results."""
+        if not prepared:
             self.console.print("[yellow]No results to display.[/yellow]")
             return
-        
-        normalized_fields = self._normalize_fields(fields) or self.DEFAULT_TABLE_FIELDS
         header_map = {
             "ip_str": "IP",
             "port": "Port",
+            "ports": "Ports",
             "transport": "Transport",
             "org": "Organization",
             "asn": "ASN",
@@ -877,18 +1080,33 @@ class ShodanIPGrabber:
             "vulns": "Vulns",
             "vuln_count": "Vuln Count",
         }
-        table = Table(title="Shodan Search Results")
+        table = Table(title="Shodan Search Results", show_lines=True)
         for field in normalized_fields:
             table.add_column(header_map.get(field, field.upper()))
-        
-        for result in results:
+
+        for result in prepared:
             row = [
-                self._get_detail_field_value(result, field)
+                self._get_detail_field_value(
+                    result, field, domain_suffix_filter
+                )
                 for field in normalized_fields
             ]
             table.add_row(*row)
-        
+
         self.console.print(table)
+
+    def display_results_table(
+        self,
+        results: List[Dict[str, Any]],
+        fields: Optional[List[str]] = None,
+        domain_suffix_filter: Optional[List[str]] = None,
+    ) -> None:
+        """Display results in a formatted table (groups by IP when port/ports columns are used)."""
+        if not results:
+            self.console.print("[yellow]No results to display.[/yellow]")
+            return
+        prepared, nf = self.prepare_detail_tabular_results(results, fields)
+        self.print_detail_table_rows(prepared, nf, domain_suffix_filter)
     
     def save_results_to_file(
         self, results: List[str], filename: str, add_protocol: bool = False
@@ -953,23 +1171,40 @@ class ShodanIPGrabber:
         filename: str,
         output_format: str = "json",
         fields: Optional[List[str]] = None,
+        csv_rows: Optional[List[Dict[str, Any]]] = None,
+        csv_columns: Optional[List[str]] = None,
+        domain_suffix_filter: Optional[List[str]] = None,
     ) -> None:
-        """Save detailed API results in json/csv/txt formats."""
+        """Save detailed API results in json/csv/txt formats.
+
+        Pass csv_rows/csv_columns from prepare_detail_tabular_results so CSV matches the table.
+        """
         try:
             if output_format == "json":
                 with open(filename, "w", encoding="utf-8") as f:
                     json.dump(results, f, indent=2, ensure_ascii=False)
             elif output_format == "csv":
-                selected_fields = (
-                    self._normalize_fields(fields) or self.DEFAULT_DETAIL_CSV_FIELDS
-                )
+                if csv_rows is not None and csv_columns is not None:
+                    selected_fields = csv_columns
+                    export_results = csv_rows
+                else:
+                    selected_fields = (
+                        self._normalize_fields(fields) or self.DEFAULT_DETAIL_CSV_FIELDS
+                    )
+                    export_results = (
+                        self._group_matches_by_ip(results)
+                        if "port" in selected_fields or "ports" in selected_fields
+                        else results
+                    )
                 with open(filename, "w", encoding="utf-8", newline="") as f:
                     writer = csv.writer(f)
                     writer.writerow(selected_fields)
-                    for result in results:
+                    for result in export_results:
                         writer.writerow(
                             [
-                                self._get_detail_field_value(result, field)
+                                self._get_detail_field_value(
+                                    result, field, domain_suffix_filter
+                                )
                                 for field in selected_fields
                             ]
                         )
@@ -982,6 +1217,16 @@ class ShodanIPGrabber:
         except IOError as e:
             self.console.print(f"[red]Failed to save detailed results: {e}[/red]")
 
+    def probe_host_search_access(self) -> Dict[str, Any]:
+        """Minimal GET /shodan/host/search to verify Search API access (uses 1 query credit)."""
+        api_key = self.config.get_api_key()
+        if not api_key:
+            raise ShodanAPIError("No API key configured.")
+        params = {"key": api_key, "query": "apache", "page": 1}
+        return self._make_request(
+            "https://api.shodan.io/shodan/host/search", params
+        )
+    
     def get_api_info(self) -> Dict[str, Any]:
         """Get information about the current API key.
         

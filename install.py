@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple installation script for SIPG.
+Simple installation script for SIPG (Shodan IP Grabber).
 """
 
 import subprocess
@@ -41,14 +41,14 @@ def main():
         sys.exit(1)
 
     # Install SIPG in development mode
-    if not run_command("pip install -e .", "Installing SIPG"):
-        print("❌ Failed to install SIPG")
+    if not run_command("pip install -e .", "Installing SIPG (Shodan IP Grabber)"):
+        print("❌ Failed to install SIPG (Shodan IP Grabber)")
         sys.exit(1)
 
     print("\n🎉 Installation completed successfully!")
     print("\n📋 Next steps:")
     print("1. Get your Shodan API key from https://account.shodan.io/")
-    print("2. Configure SIPG: sipg configure")
+    print("2. Configure your API key: sipg configure")
     print("3. Start searching: sipg search 'your-query'")
     print("4. See examples: sipg examples")
     print("5. Get help: sipg --help")

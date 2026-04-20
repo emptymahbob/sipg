@@ -1,9 +1,26 @@
 # Changelog
 
-All notable changes to SIPG will be documented in this file.
+All notable changes to SIPG (Shodan IP Grabber) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2.1.5] - 2026-04-20
+
+### Added
+- Added `--domain-suffix` filtering for domain/subdomain collection and table/csv hostname/domain columns.
+- Added `ports` field behavior to load full host ports via `GET /shodan/host/{ip}` while keeping `port` as search-match ports.
+- Added `sipg info --probe` to check `/shodan/host/search` access directly from the CLI.
+
+### Changed
+- Default mode now resolves automatically: API when a key is configured, free mode otherwise (`-M auto` default).
+- Improved table readability with row separators and full hostname/domain display.
+- Improved unsupported `--fields` errors to list all supported field names and point to `sipg fields`.
+
+### Fixed
+- Fixed API request headers so REST calls use JSON-appropriate headers (resolves false 403 behavior for some keys).
+- Fixed multiple indentation/syntax issues found in CLI/core paths during release hardening.
+- Updated README documentation for new mode behavior, port semantics, and domain suffix filtering.
 
 ## [2.0.0] - 2024-01-XX
 

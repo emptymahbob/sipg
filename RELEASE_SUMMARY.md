@@ -1,21 +1,21 @@
-# SIPG v2.1.3 Release Summary
+# SIPG (Shodan IP Grabber) v2.1.5 Release Summary
 
 ## Release Goal
-Deliver a major usability and capability upgrade so SIPG works strongly in both API-key and no-key workflows, with better collection options, output control, and reliability.
+Deliver a major usability and capability upgrade so SIPG (Shodan IP Grabber) works strongly in both API-key and no-key workflows, with better collection options, output control, and reliability.
 
 ## Highlights
-- Added dual-mode operation: `api` mode and `free` mode.
-- Upgraded free mode to deep, ipfinder-style collection behavior for larger no-key IP collection.
-- Added dedicated `collect` command with `txt`, `json`, and `csv` export formats.
-- Added field customization support with `--fields` and a new `fields` helper command.
-- Simplified command usage with short aliases and short flags.
+- Default mode now auto-selects API when a key exists (`-M auto`), with explicit `-M free` override.
+- Added `--domain-suffix` so domain/subdomain results can be strictly filtered by suffix boundary (e.g., `.mil` but not `.mil.ng`).
+- Added `ports` field behavior for full per-host ports and kept `port` as search-match ports.
+- Added `sipg info --probe` to verify Search API access directly.
 
 ## Key Features Added
-- New `sipg collect` command for collecting:
-  - `ips`
+- `search --collect` now supports:
+  - `ips` (default)
   - `domains`
   - `subdomains`
   - `all`
+  - comma-separated values (example: `domains,subdomains`)
 - New `--fields` support:
   - `search`: customize table columns and CSV schema.
   - `collect`: customize CSV schema (`type,value`).
@@ -23,7 +23,7 @@ Deliver a major usability and capability upgrade so SIPG works strongly in both 
   - Human-readable field list.
   - `--json` machine-readable output for scripts/automation.
 - Added short command aliases:
-  - `s`, `c`, `cfg`, `i`, `ex`, `cl`, `fs`
+  - `s`, `cfg`, `i`, `ex`, `cl`, `fs`
 - Added short flag forms for common options (for faster CLI usage).
 
 ## Reliability and Behavior Improvements
@@ -41,7 +41,7 @@ Deliver a major usability and capability upgrade so SIPG works strongly in both 
 - `.gitignore` updated to exclude local/dev/output artifacts more safely.
 
 ## Version and Packaging
-- Version bumped to `2.1.3` in project metadata and CLI output.
+- Version bumped to `2.1.5` in project metadata and CLI output.
 - Build validation completed:
   - `twine check dist/*` passed for wheel and sdist.
   - Fresh virtual environment install from wheel succeeded.
@@ -51,6 +51,6 @@ Deliver a major usability and capability upgrade so SIPG works strongly in both 
 - Test coverage updated for new implementations and behavior paths, including CLI/config changes tied to this release.
 
 ## Release Status
-- Changes committed and pushed to `main`.
-- Tag `v2.1.3` to be created and pushed.
+- Ready for commit and push to `main`.
+- Tag `v2.1.5` ready to be created and pushed.
 - Ready for GitHub Release publishing and PyPI/TestPyPI publishing workflows.

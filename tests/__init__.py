@@ -1,1 +1,1 @@
-# Tests package for SIPG
+# Tests package for SIPG (Shodan IP Grabber)
