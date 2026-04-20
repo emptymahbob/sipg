@@ -87,7 +87,7 @@ def print_banner():
     console.print(
         Panel(
             Align.center(body),
-            title="SIPG v2.1.5",
+            title="SIPG v2.1.4",
             subtitle="Shodan IP Grabber · Made by @emptymahbob",
             expand=True,
         )
@@ -95,7 +95,7 @@ def print_banner():
 
 
 @click.group()
-@click.version_option(version="2.1.5", prog_name="SIPG (Shodan IP Grabber)")
+@click.version_option(version="2.1.4", prog_name="SIPG (Shodan IP Grabber)")
 def cli():
     """SIPG — Shodan IP Grabber
 

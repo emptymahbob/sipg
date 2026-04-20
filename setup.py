@@ -23,7 +23,7 @@ def read_requirements():
 
 setup(
     name="sipg",
-    version="2.1.5",
+    version="2.1.4",
     author="Mahbob Alam",
     author_email="emptymahbob@gmail.com",
     description=(

@@ -1,4 +1,4 @@
-# SIPG (Shodan IP Grabber) v2.1.5 Release Summary
+# SIPG (Shodan IP Grabber) v2.1.4 Release Summary
 
 ## Release Goal
 Deliver a major usability and capability upgrade so SIPG (Shodan IP Grabber) works strongly in both API-key and no-key workflows, with better collection options, output control, and reliability.
@@ -41,7 +41,7 @@ Deliver a major usability and capability upgrade so SIPG (Shodan IP Grabber) wor
 - `.gitignore` updated to exclude local/dev/output artifacts more safely.
 
 ## Version and Packaging
-- Version bumped to `2.1.5` in project metadata and CLI output.
+- Version remains `2.1.4` in project metadata and CLI output.
 - Build validation completed:
   - `twine check dist/*` passed for wheel and sdist.
   - Fresh virtual environment install from wheel succeeded.
@@ -52,5 +52,5 @@ Deliver a major usability and capability upgrade so SIPG (Shodan IP Grabber) wor
 
 ## Release Status
 - Ready for commit and push to `main`.
-- Tag `v2.1.5` ready to be created and pushed.
+- Tag remains `v2.1.4` for the current published release.
 - Ready for GitHub Release publishing and PyPI/TestPyPI publishing workflows.

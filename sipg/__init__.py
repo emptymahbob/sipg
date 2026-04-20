@@ -4,7 +4,7 @@ SIPG — Shodan IP Grabber
 A professional command-line tool for searching IP addresses using Shodan API.
 """
 
-__version__ = "2.1.5"
+__version__ = "2.1.4"
 __author__ = "Mahbob Alam"
 __email__ = "emptymahbob@gmail.com"
 __long_name__ = "Shodan IP Grabber"
